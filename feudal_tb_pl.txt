@@ -10,7 +10,7 @@
 '+ after suicide "how many units of 76' when bad first letter
 '+loading game does not really work, it starts again'
 
-$options +optimize, optimize=-fixed_vars-const_replace
+''$options +optimize, optimize=-fixed_vars-const_replace
 '$options mode=compatible
 
 REM modified 061485 by Bruce Ramsey 411 N 61st, Seattle, WA 98103
