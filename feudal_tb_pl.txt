@@ -6,38 +6,38 @@
 'pressing 0 in taxes screen hangs game'
 '???return (0) after development continues'
 '+after suicide loop with asking about continuation'
-'+dead(E) is not checked anywhere'
+'+dead(player) is not checked anywhere'
 '+ after suicide "how many units of 76' when bad first letter
 '+loading game does not really work, it starts again'
 
-''$options +optimize, optimize=-fixed_vars-const_replace
+$options +optimize, optimize=-fixed_vars-const_replace
 '$options mode=compatible
 
 REM modified 061485 by Bruce Ramsey 411 N 61st, Seattle, WA 98103
-REM players=# of players;E=player;Y1=year
-'   G=$/grain,D1=demand;W=weather;
+REM players=# of players;player=player;year=year
+'   G=$/grain,D1=demand;weather=weather;
 '   L=land price;C1=customs revenue
 REM S1=sales tax rev.;I1=income tax rev.;
 '   J=net justice revenue
-REM markets(E)=# of markets;merchants(E)=# of merchants (5 per market):
-'   mills(E)=# of woollen mills:serfs(E)=# of serfs
-REM palace_points(E)=palace pts:nobles(E)=nobles(RND 1-2/palace_points(E));
-'   cathedral_points(E)=cathedral pts.
-REM clergymen(E)=# of clergymen(RND 1-6 per cath.point;
-'   cash(E)=cash;land(E)=land
-'   troops(E)=troops(paid $3/turn)
-REM customs_duty(E)=customs duty;sales_tax(E)=sales tax
-'   income_tax(E)=income tax;justice(E)=justice
-'   victory_points(E)=victory pts.(15 to win)
-REM death_date(E)=you will die by this date (1440-1455);
-'   grain(E)=grain reserves
-'   dead(E) 0=alive,1=dead;sex(E)=sex
+REM markets(player)=# of markets;merchants(player)=# of merchants (5 per market):
+'   mills(player)=# of woollen mills:serfs(player)=# of serfs
+REM palace_points(player)=palace pts:nobles(player)=nobles(RND 1-2/palace_points(player));
+'   cathedral_points(player)=cathedral pts.
+REM clergymen(player)=# of clergymen(RND 1-6 per cath.point;
+'   cash(player)=cash;land(player)=land
+'   troops(player)=troops(paid $3/turn)
+REM customs_duty(player)=customs duty;sales_tax(player)=sales tax
+'   income_tax(player)=income tax;justice(player)=justice
+'   victory_points(player)=victory pts.(15 to win)
+REM death_date(player)=you will die by this date (1440-1455);
+'   grain(player)=grain reserves
+'   dead(player) 0=alive,1=dead;sex(player)=sex
 REM titles$=titles;W$=weather & harvest;
 '   names$=names;justice$=level of justice;
-'   winner(E)are you already sup.ruler?
-REM status_points(E)=status pts.:cathedral pt. adds 1;palace,0.5;mill,0.25;
+'   winner(player)are you already sup.ruler?
+REM status_points(player)=status pts.:cathedral pt. adds 1;palace,0.5;mill,0.25;
 '   market,0.1;
-'   land_prices(E)=land prices
+'   land_prices(player)=land prices
 
 '$define POKMSK = 16
 $define LMARGN = 82
@@ -59,15 +59,15 @@ $define key_ret = 155
     DELAY=15
     DIM names$(49),titles$(215),W$(34),land(7),troops(7),cathedral_points(6)
     dim mills(6),markets(6),palace_points(6),serfs(6),A$(23),cash(6)
-    dim N1(30),N2(30),land_prices(6)
+    dim titles_start_pos(30),titles_end_pos(30),land_prices(6)
     DIM winner(6),customs_duty(6),sex(7),sales_tax(6),income_tax(6)
     dim justice(6),death_date(6),grain(6),victory_points(7),status_points(6)
     dim nobles(6),clergymen(6),merchants(6),justice$(12),dead(6)
-    Y1=1400
+    year=1400
     FOR A=1 TO 30
-        N1(A)=LEN(titles$)+1
+        titles_start_pos(A)=LEN(titles$)+1
         READ A$
-        N2(A)=LEN(titles$)+LEN(A$)
+        titles_end_pos(A)=LEN(titles$)+LEN(A$)
         titles$(LEN(titles$)+1)=A$
     NEXT A
     POKE @LMARGN,2
@@ -79,9 +79,9 @@ $define key_ret = 155
     endif
 
     do: 'main game loop'
-        E=E+1
-        IF victory_points(E)=-1
-            E=E+1
+        player=player+1
+        IF victory_points(player)=-1
+            player=player+1
         endif
         AX=0
         FOR A=1 TO players
@@ -96,22 +96,22 @@ $define key_ret = 155
         NEXT A
         IF AX=0 THEN run
 
-        IF E>players
-            E=0
-            Y1=Y1+1: 'next year
+        IF player>players
+            player=0
+            year=year+1: 'next year
         else
-            IF Y1<=death_date(E) and dead(E) = 0
-                IF Y1=death_date(E) OR land(E)<1001
+            IF year<=death_date(player) and dead(player) = 0
+                IF year=death_date(player) OR land(player)<1001
                     exec game_over
                 else
-                    exec weather
+                    exec get_weather
                     exec grain_land_trade
                     exec modify_taxes
                     exec map
                     '666'
                     exec development
                     exec winner_check
-                    IF cash(E)>0 THEN cash(E)=INT(cash(E)*1.1)
+                    IF cash(player)>0 THEN cash(player)=INT(cash(player)*1.1)
                 endif
             endif
         endif
@@ -186,7 +186,7 @@ proc initial_settings
         income_tax(A)=5
         justice(A)=2
         death_date(A)=1440+RaND(15)
-        cash(A)=100000:'1000 'Initial wealth
+        cash(A)=1000:'1000 'Initial wealth
         land(A)=10000
         grain(A)=5000
         victory_points(A)=1
@@ -199,50 +199,50 @@ proc initial_settings
         land_prices(A)=2
     NEXT A
 
-    ? "\7D\1D\1D\1D\1D\1D    PODAJ POZIOM GRY (0-9)"
+    ? "\7D\1D\1D\1D\1D\1D    ";"PODAJ POZIOM GRY (0-9)"
     exec get_digit, 9
     status_points(0)=key+6
 endproc
 
 proc top_of_the_screen
-    if victory_points>0
-        ? titles$(N1(victory_points(E)+sex(E)),N2(victory_points(E)+sex(E)));" ";
+    if victory_points(player)>0
+        ? titles$(titles_start_pos(victory_points(player)+sex(player)), titles_end_pos(victory_points(player)+sex(player)));" ";
     endif
     X=0
     repeat
-        ? names$(E*7-6+X,E*7-6+X);
+        ? names$(player*7-6+X,player*7-6+X);
         X=X+1
-    until names$(E*7-6+X,E*7-6+X)=" " or X>=7
+    until names$(player*7-6+X,player*7-6+X)=" " or X>=7
 endproc
 
-proc weather
+proc get_weather
     POKE @LMARGN,1
-    W=rand(5) + 1
-    if w = 1 then W$="SUSZA   GROZI GLOD"
-    if w = 2 then W$="ZLA POGODA-LICHE ZBIORY"
-    if w = 3 then W$="NORMALNA POGODA-PRZECIETNE ZBIORY"
-    if w = 4 then W$="DOBRA POGODA-B.DOBRE ZBIORY"
-    if w = 5 then W$="WSPANIALA POGODA-$WIETNE ZBIORY"
+    weather=rand(5) + 1
+    if weather = 1 then W$="SUSZA   GROZI GLOD"
+    if weather = 2 then W$="ZLA POGODA-LICHE ZBIORY"
+    if weather = 3 then W$="NORMALNA POGODA-PRZECIETNE ZBIORY"
+    if weather = 4 then W$="DOBRA POGODA-B.DOBRE ZBIORY"
+    if weather = 5 then W$="WSPANIALA POGODA-$WIETNE ZBIORY"
     R=rand(25)+1
-    V=(grain(E)*R)/100
-    grain(E)=grain(E)-V
+    V=(grain(player)*R)/100
+    grain(player)=grain(player)-V
     REM rats eat R%
-    X=land(E)
-    Y=(serfs(E)-mills(E)*100)*5
+    X=land(player)
+    Y=(serfs(player)-mills(player)*100)*5
     IF Y<0 THEN Y=0
     REM subtract 100 serfs from harvest for each mill
     IF Y<X THEN X=Y
     REM usable land
-    Y=grain(E)*2
+    Y=grain(player)*2
     IF Y<X THEN X=Y
     REM penalty if seed<0.5*land
-    Y=W-0.5
+    Y=weather-0.5
     H1=X*Y
-    grain(E)=grain(E)+H1-INT(X/2)
+    grain(player)=grain(player)+H1-INT(X/2)
     REM harvest=weather*land with labor and seed support;subtract seed
-    D1=nobles(E)*100+clergymen(E)*40+merchants(E)*30+troops(E)*10+serfs(E)*5
+    D1=nobles(player)*100+clergymen(player)*40+merchants(player)*30+troops(player)*10+serfs(player)*5
     REM nobles eat more than serfs
-    L=(3*W+RaND(6)+1+RaND(6)+1+10)/10
+    L=(3*weather+RaND(6)+1+RaND(6)+1+10)/10
     IF H1<1
         Y=2
     else
@@ -253,19 +253,19 @@ proc weather
     L=L*Y
     L=INT(L*10)/10
     REM land price=2dice,weather;proportion of grain purchased raises land price
-    IF L>land_prices(E)+0.8 THEN L=land_prices(E)+0.8
+    IF L>land_prices(player)+0.8 THEN L=land_prices(player)+0.8
     REM max amt land price can rise=0.8
-    IF L<land_prices(E)-0.5 THEN L=land_prices(E)-0.5
+    IF L<land_prices(player)-0.5 THEN L=land_prices(player)-0.5
     REM max amt land price can fall=0.5
-    land_prices(E)=L
-    REM store player E's land price
-    Z=6-W
+    land_prices(player)=L
+    REM store player player's land price
+    Z=6-weather
     G=(Z*3+RaND(5)+1+RaND(5)+1)/5*Y*20
     G=INT(G*4)
 endproc
 
 proc harvest_report
-    grain(E)=INT(grain(E))
+    grain(player)=INT(grain(player))
     H1=INT(H1)
     ? "Szczury zjadly ";R;"% twego ziarna "
     ?
@@ -275,12 +275,12 @@ proc harvest_report
 endproc
 
 proc land_report
-    ? "ZIEMIA ";land(E);" hektarow"
+    ? "ZIEMIA ";land(player);" hektarow"
     POSITION 20,8
-    SD=INT(land(E)/2)
-    IF SD>grain(E)-D1 THEN SD=grain(E)-D1
+    SD=INT(land(player)/2)
+    IF SD>grain(player)-D1 THEN SD=grain(player)-D1
     IF SD<0 THEN SD=0
-    ? "NASIONA ";SD;" (";INT(100*SD/(land(E)/2));"%)"
+    ? "NASIONA ";SD;" (";INT(100*SD/(land(player)/2));"%)"
     FOR V=1 TO 37
         ? "\0E";
     NEXT V
@@ -288,7 +288,7 @@ proc land_report
     ? "ZAPAS   ZAP. NA  CENA   CENA  SKARB"
     ? "ZIARNA  ZIARNO  ZIARNA  ZIEMI"
     Z9=PEEK(@ROWCRS)
-    ? grain(E)-SD
+    ? grain(player)-SD
     POSITION 9,Z9
     ? D1
     POSITION 17,Z9
@@ -296,7 +296,7 @@ proc land_report
     POSITION 24,Z9
     ? L
     POSITION 31,Z9
-    ? cash(E)
+    ? cash(player)
     ? "Korce   Korce   Tys.K  Hektar Dukaty "
 endproc
 
@@ -306,7 +306,7 @@ proc grain_land_trade
     ?
     exec top_of_the_screen
     POSITION 27,1
-    ? " Rok ";Y1
+    ? " Rok ";year
     ?
     exec harvest_report
     POKE @CRSINH,1
@@ -328,38 +328,38 @@ proc grain_land_trade
         if i1 = 1
             ? "\9CILE ZIARNA I NASION \CB\D5\D0\D5\CA\C5\D3\DA ";
             exec input_number, 1, 500000
-            cash(E)=cash(E)-(I1*G/1000)
-            grain(E)=grain(E)+I1
+            cash(player)=cash(player)-(I1*G/1000)
+            grain(player)=grain(player)+I1
         endif
 
         if i1 = 2
             ? "\9CILE ZIARNA I NASION \D3\D0\D2\DA\C5\C4\C1\CA\C5\D3\DA";
             exec input_number, 1, 500000
-            IF I1>grain(E)
+            IF I1>grain(player)
                 ? "\1C\9CTYLE NIE POSIADASZ\FD"
                 pause DELAY
             else
-                cash(E)=cash(E)+(I1*G/1000)
-                grain(E)=grain(E)-I1
+                cash(player)=cash(player)+(I1*G/1000)
+                grain(player)=grain(player)-I1
             endif
         endif
 
         if i1 = 3
             ? "\9CILE HEKTAROW \CB\D5\D0\D5\CA\C5\D3\DA";
             exec input_number, 1, 100000
-            land(E)=land(E)+I1
-            cash(E)=cash(E)-(I1*L)
+            land(player)=land(player)+I1
+            cash(player)=cash(player)-(I1*L)
         endif
 
         if i1 = 4
             ? "\9CILE HEKTAROW \D3\D0\D2\DA\C5\C4\C1\CA\C5\D3\DA";
             exec input_number, 1, 100000
-            IF I1>land(E)-5000
+            IF I1>land(player)-5000
                 ? "\1C\9CMUSISZ TRZYMAC CO NAJMNIEJ 5000 HEKTAROW!\FD"
                 pause DELAY
             else
-                land(E)=land(E)-I1
-                cash(E)=cash(E)+(I1*L)
+                land(player)=land(player)-I1
+                cash(player)=cash(player)+(I1*L)
             endif
         endif
 
@@ -384,31 +384,31 @@ proc calc_round_results
         endif
 
         POKE @CRSINH,1
-        IF G1>grain(E)
-            ? "\1C\9C\9CBRAKUJE CI ";G1-INT(grain(E));" KORCOW !\FD"
+        IF G1>grain(player)
+            ? "\1C\9C\9CBRAKUJE CI ";G1-INT(grain(player));" KORCOW !\FD"
             pause DELAY+DELAY
         else
             exit
         endif
     loop
     do: 'fake loop'
-        grain(E)=grain(E)-G1
+        grain(player)=grain(player)-G1
         POKE @LMARGN,2
         ? "\7D"
         exec top_of_the_screen
-        ? ", ";Y1
+        ? ", ";year
         ?
         Z=G1/D1-1
         IF Z>0 THEN Z=Z/2
         IF Z>0.25 THEN Z=Z/10+0.25
-        Z1=50-customs_duty(E)-sales_tax(E)-income_tax(E)
-        IF Z1<0 THEN Z1=Z1*justice(E)
+        Z1=50-customs_duty(player)-sales_tax(player)-income_tax(player)
+        IF Z1<0 THEN Z1=Z1*justice(player)
         Z1=Z1/10
-        IF Z1>0 THEN Z1=Z1+3-justice(E)
+        IF Z1>0 THEN Z1=Z1+3-justice(player)
         Z=Z+(Z1/10)
         IF Z>0.5 THEN Z=0.5
         IF G1<(D1-1) THEN exec get_births_and_deaths:exit
-        IF serfs(E)<0 THEN serfs(E)=0
+        IF serfs(player)<0 THEN serfs(player)=0
         A=7
         ?
         exec births
@@ -416,14 +416,14 @@ proc calc_round_results
         exec deaths
 
         REM if sales+customs tax_rates<35%, add 1-4 extra merchants/turn
-        IF (customs_duty(E)+sales_tax(E))<35 THEN merchants(E)=merchants(E)+RaND(4)+1
+        IF (customs_duty(player)+sales_tax(player))<35 THEN merchants(player)=merchants(player)+RaND(4)+1
         REM if income_tax rate less than a random number 1-20 then add 0-1 nobles, 0-2 clergy
-        IF income_tax(E) < RaND(20)+1
-            nobles(E)=nobles(E)+RaND(2)
-            clergymen(E)=clergymen(E)+RaND(3)
+        IF income_tax(player) < RaND(20)+1
+            nobles(player)=nobles(player)+RaND(2)
+            clergymen(player)=clergymen(player)+RaND(3)
         endif
         IF G1<(D1*1.3) THEN exit
-        Z1=serfs(E)/1000
+        Z1=serfs(player)/1000
         Z=(G1-D1)/D1*10
         Z=Z*Z1*RaND(25) + 1 + RaND(20) + 1
         IF Z>32000 THEN Z=32000
@@ -431,63 +431,63 @@ proc calc_round_results
         Z=INT(RaND(Z1)+INT(Z1/5))
         ? Z;" przybylo do twego lenna"
         ?
-        serfs(E)=serfs(E)+Z
+        serfs(player)=serfs(player)+Z
         Z1=Z/5
         Z=RaND(Z1)+1
         IF Z>50 THEN Z=50
-        merchants(E)=merchants(E)+Z
-        nobles(E)=nobles(E)+1
-        clergymen(E)=clergymen(E)+2
+        merchants(player)=merchants(player)+Z
+        nobles(player)=nobles(player)+1
+        clergymen(player)=clergymen(player)+2
         REM migration adds 1 noble, 2 clergy, up to 50 merchants(0-20% of new serfs)
         exit: 'not a real loop'
     loop
 
-    IF justice(E)>2
-        J1=serfs(E)/100*(justice(E)-2)*(justice(E)-2)
+    IF justice(player)>2
+        J1=serfs(player)/100*(justice(player)-2)*(justice(player)-2)
         J1=RaND(J1)+1
-        serfs(E)=serfs(E)-J1
+        serfs(player)=serfs(player)-J1
         ? J1;" poddanych zbieglo"
         ?
     endif
 
-    IF cash(E)<0
-        cash(E)=INT(cash(E)*1.5)
-        ? "Lichwiarze domagaja sie zwrotu ";ABS(INT(cash(E)/3));" dukatow"
+    IF cash(player)<0
+        cash(player)=INT(cash(player)*1.5)
+        ? "Lichwiarze domagaja sie zwrotu ";ABS(INT(cash(player)/3));" dukatow"
         ?
     endif
-    Z=11-INT(sales_tax(E)/10)
-    A=INT((serfs(E)-500+300*mills(E))/1000)
+    Z=11-INT(sales_tax(player)/10)
+    A=INT((serfs(player)-500+300*mills(player))/1000)
     FOR V=1 TO 10
-        IF markets(E)>A*V THEN Z=Z-1
+        IF markets(player)>A*V THEN Z=Z-1
         REM margins
     NEXT V
-    Z1=Z/100*markets(E)*1000
-    cash(E)=cash(E)+Z
+    Z1=Z/100*markets(player)*1000
+    cash(player)=cash(player)+Z
     IF Z1>0 THEN ? "Kramy przyniosly ";Z1;" dukatow (";Z;"%)"
-    IF serfs(E)<32766
+    IF serfs(player)<32766
         'why this check is here?'
-        serfs(E)=int(serfs(E))
+        serfs(player)=int(serfs(player))
     endif
-    Z=180-customs_duty(E)*2-justice(E)*10-income_tax(E)
-    IF Z<0 OR serfs(E)/100<mills(E) THEN Z=0
-    Z=mills(E)*(Z+RaND(Z)+1)
+    Z=180-customs_duty(player)*2-justice(player)*10-income_tax(player)
+    IF Z<0 OR serfs(player)/100<mills(player) THEN Z=0
+    Z=mills(player)*(Z+RaND(Z)+1)
     IF Z>0
-        cash(E)=cash(E)+Z
-        ? "Mlyny przyniosly ";Z;" dukatow (";INT((Z/mills(E))/20);"%)"
+        cash(player)=cash(player)+Z
+        ? "Mlyny przyniosly ";Z;" dukatow (";INT((Z/mills(player))/20);"%)"
     endif
-    troops(E)=INT(troops(E))
-    Z=troops(E)*3
+    troops(player)=INT(troops(player))
+    Z=troops(player)*3
     ?
-    ? troops(E);" Wojownikow kosztuje ";Z;" dukatow"
+    ? troops(player);" Wojownikow kosztuje ";Z;" dukatow"
     ?
     ?
-    cash(E)=cash(E)-Z
-    IF (land(E)/1000)>troops(E) THEN exec military_attack
+    cash(player)=cash(player)-Z
+    IF (land(player)/1000)>troops(player) THEN exec military_attack
     REM CHECK DEFENSES
-    while (land(E)/500)>=troops(E)
+    while (land(player)/500)>=troops(player)
     'nested ifs did not work, but while/exit is almost an if
         FOR A=1 TO players
-            IF A <> E and troops(A)>(troops(E)*2) THEN exec military_attack
+            IF A <> player and troops(A)>(troops(player)*2) THEN exec military_attack
         NEXT A
         exit
     wend
@@ -498,36 +498,36 @@ endproc
 
 proc show_taxes
     'justice$=""
-    J=INT((justice(E)*300-500)*victory_points(E))
-    IF justice(E)=1 THEN justice$=" LAGODNE"
-    IF justice(E)=2 THEN justice$="UMIARKOWANE"
-    IF justice(E)=3 THEN justice$=" SUROWE"
-    IF justice(E)=4 THEN justice$="DRAKONSKIE"
-    Y=150-customs_duty(E)-sales_tax(E)-income_tax(E)
+    J=INT((justice(player)*300-500)*victory_points(player))
+    IF justice(player)=1 THEN justice$=" LAGODNE"
+    IF justice(player)=2 THEN justice$="UMIARKOWANE"
+    IF justice(player)=3 THEN justice$=" SUROWE"
+    IF justice(player)=4 THEN justice$="DRAKONSKIE"
+    Y=150-customs_duty(player)-sales_tax(player)-income_tax(player)
     IF Y<1 THEN Y=1
     REM you get points if your 3 tax rates add up to less than 50
-    C1=(nobles(E)*180+clergymen(E)*75+merchants(E)*20)*(Y/100)+status_points(E)*100
+    C1=(nobles(player)*180+clergymen(player)*75+merchants(player)*20)*(Y/100)+status_points(player)*100
     REM taxable trade=Nobles, clergy, merchants, points, tax<50
-    S1=(nobles(E)*50+merchants(E)*25+status_points(E)*10)*(Y/100)*(5-justice(E))/2
+    S1=(nobles(player)*50+merchants(player)*25+status_points(player)*10)*(Y/100)*(5-justice(player))/2
     REM taxable retail sales=nobles,merch,points,tax<50,JUSTICE
-    I1=nobles(E)*250+status_points(E)*20+(10*justice(E)*merchants(E))*(Y/100)
+    I1=nobles(player)*250+status_points(player)*20+(10*justice(player)*merchants(player))*(Y/100)
     REM TAXABLE INCOME=nobles, points, merchants*justice
-    C1=C1*customs_duty(E)/100
+    C1=C1*customs_duty(player)/100
     IF C1<32760 THEN C1=INT(C1)
-    S1=S1*sales_tax(E)/100
+    S1=S1*sales_tax(player)/100
     IF S1<32760 THEN S1=INT(S1)
-    I1=I1*income_tax(E)/100
+    I1=I1*income_tax(player)/100
     IF I1<32760 THEN I1=INT(I1)
     ? "Twoje Dochody ";J+C1+S1+I1;" dukatow"
     ?
     ? " CLO   SPRZEDAZ  KUPNO     PRAWO "
     Z9=PEEK(@ROWCRS)
     POSITION 3,Z9
-    ? customs_duty(E);"%"
+    ? customs_duty(player);"%"
     POSITION 12,Z9
-    ? sales_tax(E);"%"
+    ? sales_tax(player);"%"
     POSITION 20,Z9
-    ? income_tax(E);"%"
+    ? income_tax(player);"%"
     POSITION 27,Z9
     ? justice$
     ?
@@ -549,7 +549,7 @@ proc modify_taxes
         POKE @CRSINH,1
         exec top_of_the_screen
         ?
-        ? "Rok ";Y1;"  Ziemia ";land(E);" hektarow"
+        ? "Rok ";year;"  Ziemia ";land(player);" hektarow"
         ?
         exec show_taxes
         ?
@@ -578,7 +578,7 @@ proc modify_taxes
                     I=1
                     exit
                 else
-                    customs_duty(E)=I1
+                    customs_duty(player)=I1
                 endif
                 exit
             endif
@@ -590,7 +590,7 @@ proc modify_taxes
                     ''? "\7D"
                     exit
                 else
-                    sales_tax(E)=I1
+                    sales_tax(player)=I1
                 endif
                 exit
             endif
@@ -602,7 +602,7 @@ proc modify_taxes
                     ''? "\7D"
                     exit
                 else
-                    income_tax(E)=I1
+                    income_tax(player)=I1
                 endif
                 exit
             endif
@@ -618,7 +618,7 @@ proc modify_taxes
                 ?
                 ? "    <4> Drakonskie"
                 exec get_digit, 4
-                justice(E)=key
+                justice(player)=key
                 exit
             endif
         loop
@@ -628,23 +628,23 @@ endproc
 
 proc births
     POKE @CRSINH,1
-    Z= (RaND(A)+1)*serfs(E)/100
+    Z= (RaND(A)+1)*serfs(player)/100
     Z1=INT(Z)
     ? Z1;" poddanych sie urodzilo"
-    serfs(E)=serfs(E)+Z1
+    serfs(player)=serfs(player)+Z1
 endproc
 
 proc deaths
-    Z= (RaND(A)+1)*serfs(E)/100
+    Z= (RaND(A)+1)*serfs(player)/100
     Z1=INT(Z)
     ? Z1;" poddanych zmarlo"
-    IF Z1>serfs(E)*0.3
-        dead(E)=1
+    IF Z1>serfs(player)*0.3
+        dead(player)=1
         pause DELAY
         A=7
     endif
     ?
-    serfs(E)=serfs(E)-Z1
+    serfs(player)=serfs(player)-Z1
 endproc
 
 proc get_births_and_deaths
@@ -727,8 +727,8 @@ proc results_table
 endproc
 
 proc is_bankrupt
-    cash(E)=cash(E)+C1+S1+I1+J
-    IF cash(E)<(-10000*victory_points(E))
+    cash(player)=cash(player)+C1+S1+I1+J
+    IF cash(player)<(-10000*victory_points(player))
         GRAPHICS 0
         exec top_of_the_screen
         ? " JEST BANKRUTEM!"
@@ -737,19 +737,19 @@ proc is_bankrupt
         ? " twoje aktywa!"
         ?
         exec press_any
-        markets(E)=0
-        grain(E)=nobles(E)*100+clergymen(E)*40+merchants(E)*30+troops(E)*10+serfs(E)*5+2000
-        palace_points(E)=0
-        cathedral_points(E)=0
-        mills(E)=0
-        land(E)=6000
-        status_points(E)=1
-        cash(E)=100
-        victory_points(E)=victory_points(E)-2
-        merchants(E)=25
-        nobles(E)=5
-        clergymen(E)=5
-        troops(E)=troops(E)/2
+        markets(player)=0
+        grain(player)=nobles(player)*100+clergymen(player)*40+merchants(player)*30+troops(player)*10+serfs(player)*5+2000
+        palace_points(player)=0
+        cathedral_points(player)=0
+        mills(player)=0
+        land(player)=6000
+        status_points(player)=1
+        cash(player)=100
+        victory_points(player)=victory_points(player)-2
+        merchants(player)=25
+        nobles(player)=5
+        clergymen(player)=5
+        troops(player)=troops(player)/2
     endif
 endproc
 
@@ -757,7 +757,7 @@ proc military_attack
     Z=0
     FOR A=1 TO players
     REM war
-    IF A<>E and troops(A)>=troops(E) and troops(A)>=(1.2*(land(A)/1000))
+    IF A<>player and troops(A)>=troops(player) and troops(A)>=(1.2*(land(A)/1000))
         IF troops(A)>troops(Z) THEN Z=A
         REM define invader
     endif
@@ -767,21 +767,21 @@ proc military_attack
         A=RaND(9000)+1001
         REM "Peppone"
     else
-        A=INT((troops(Z)-troops(E)))*50
-        IF A>land(E)-1000 THEN A=land(E)-1000
+        A=INT((troops(Z)-troops(player)))*50
+        IF A>land(player)-1000 THEN A=land(player)-1000
     endif
     IF A<1000 THEN A=1000
-    ? titles$(N1(Z)+sex(Z),N2(Z)+sex(Z));" ";names$(Z*7-6,Z*7)
+    ? titles$(titles_start_pos(Z)+sex(Z),titles_end_pos(Z)+sex(Z));" ";names$(Z*7-6,Z*7)
     ? "najechal i zajal ";A
     ? "hektarow ziemi!"
     land(Z)=land(Z)+A
-    land(E)=land(E)-A
+    land(player)=land(player)-A
     Z=INT(RaND(40)*(A/1000))
-    IF Z>troops(E)-15 THEN Z=troops(E)-15
+    IF Z>troops(player)-15 THEN Z=troops(player)-15
     IF Z<0 THEN Z=0
     exec top_of_the_screen
     ? " stracil ";Z;" wojownikow!"
-    troops(E)=troops(E)-Z
+    troops(player)=troops(player)-Z
     ?
     'exec press_any
 endproc
@@ -834,10 +834,10 @@ proc development
                 ? "-";
             NEXT V
             ?
-            ? cash(E);" Dukatow"
+            ? cash(player);" Dukatow"
             ?
             ?
-            ? "MOZLIWO$CI,  ROK ";Y1
+            ? "MOZLIWO$CI,  ROK ";year
             ? "\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D\0D"
             ? "<1> Kram                1000"
             ? "<2> Mlyn                2000"
@@ -856,20 +856,20 @@ proc development
             if key < 1 then exit
             IF key=6
                 exec results_table
-                cash(E)=cash(E)-100
+                cash(player)=cash(player)-100
                 exit
             endif
             IF key=7
                 exec map
-                cash(E)=cash(E)-100
+                cash(player)=cash(player)-100
                 exit
             endif
             IF key=8
                 ? "\9CPodaj pierwsza litere imienia";
                 get key
                 POKE @CH,255
-                IF names$(E*7-6,E*7-6)=CHR$(key)
-                    dead(E)=1
+                IF names$(player*7-6,player*7-6)=CHR$(key)
+                    dead(player)=1
                     exec game_over
                     key=-1
                 endif
@@ -887,32 +887,32 @@ proc development
             IF ZZ<1 THEN exit
             FOR IJ=1 TO ZZ
                 if i=1
-                    markets(E)=markets(E)+1
-                    merchants(E)=merchants(E)+5
-                    cash(E)=cash(E)-1000
-                    status_points(E)=status_points(E)+0.1
+                    markets(player)=markets(player)+1
+                    merchants(player)=merchants(player)+5
+                    cash(player)=cash(player)-1000
+                    status_points(player)=status_points(player)+0.1
                 endif
                 if i=2
-                    mills(E)=mills(E)+1
-                    cash(E)=cash(E)-2000
-                    status_points(E)=status_points(E)+0.25
+                    mills(player)=mills(player)+1
+                    cash(player)=cash(player)-2000
+                    status_points(player)=status_points(player)+0.25
                 endif
                 if i=3
-                    palace_points(E)=palace_points(E)+1
-                    nobles(E)=nobles(E)+RaND(2)+1
-                    cash(E)=cash(E)-3000
-                    status_points(E)=status_points(E)+0.5
+                    palace_points(player)=palace_points(player)+1
+                    nobles(player)=nobles(player)+RaND(2)+1
+                    cash(player)=cash(player)-3000
+                    status_points(player)=status_points(player)+0.5
                 endif
                 if i=4
-                    cathedral_points(E)=cathedral_points(E)+1
-                    clergymen(E)=clergymen(E)+RaND(6)+1
-                    cash(E)=cash(E)-5000
-                    status_points(E)=status_points(E)+1
+                    cathedral_points(player)=cathedral_points(player)+1
+                    clergymen(player)=clergymen(player)+RaND(6)+1
+                    cash(player)=cash(player)-5000
+                    status_points(player)=status_points(player)+1
                 endif
                 if i=5
-                    troops(E)=troops(E)+20
-                    serfs(E)=serfs(E)-20
-                    cash(E)=cash(E)-500
+                    troops(player)=troops(player)+20
+                    serfs(player)=serfs(player)-20
+                    cash(player)=cash(player)-500
                 endif
             NEXT IJ
         loop
@@ -924,44 +924,44 @@ endproc
 
 proc winner_check
     Z=0
-    A=markets(E)
+    A=markets(player)
     exec adjust_points
-    A=palace_points(E)
+    A=palace_points(player)
     exec adjust_points
-    A=cathedral_points(E)*2
+    A=cathedral_points(player)*2
     exec adjust_points
-    A=mills(E)
+    A=mills(player)
     exec adjust_points
-    A=cash(E)/5000
+    A=cash(player)/5000
     exec adjust_points
-    A=land(E)/4000
+    A=land(player)/4000
     exec adjust_points
-    A=merchants(E)/40
+    A=merchants(player)/40
     exec adjust_points
-    A=nobles(E)
+    A=nobles(player)
     exec adjust_points
-    A=troops(E)/20
+    A=troops(player)/20
     exec adjust_points
-    A=clergymen(E)/10
+    A=clergymen(player)/10
     exec adjust_points
-    A=serfs(E)/1000
+    A=serfs(player)/1000
     exec adjust_points
-    A=status_points(E)/5
+    A=status_points(player)/5
     exec adjust_points
     REM enough points to win?
-    A=Z/status_points(0)-justice(E)
+    A=Z/status_points(0)-justice(player)
     A=INT(A)
     IF A>15
         A=15
     endif: 'TBXL-parser error!!!
     REM adjust for difficulty,justice
-    IF (Y1+2)=death_date(E) THEN victory_points(E)=victory_points(E)+1
+    IF (year+2)=death_date(player) THEN victory_points(player)=victory_points(player)+1
     IF A<1 THEN A=1
-    IF victory_points(E)-1<=A
-        victory_points(E)=A
-        while winner(E)<>1 and victory_points(E)>=15
+    IF victory_points(player)-1<=A
+        victory_points(player)=A
+        while winner(player)<>1 and victory_points(player)>=15
             GRAPHICS 7
-            winner(E)=1
+            winner(player)=1
             ? "* ";
             exec top_of_the_screen
             ? " WYNIKI KONCOWE!"
@@ -994,10 +994,10 @@ proc game_over
     exec top_of_the_screen
     ? " zeszedl $miertelnie"
     ?
-    victory_points(E)=-1
-    dead(e) = dead(e) + 1:'to prevent displaying game over more than once
+    victory_points(player)=-1
+    dead(player) = dead(player) + 1:'to prevent displaying game over more than once
     do:'fake loop
-        IF land(E)<1001
+        IF land(player)<1001
             ? "podczas powstania"
             exit
         endif
@@ -1007,8 +1007,8 @@ proc game_over
             exit
         endif
         Y=RaND(6)+1
-        IF Y1>1455
-            ? "ze staro$ci w R.P. ";Y1
+        IF year>1455
+            ? "ze staro$ci w R.P. ";year
         else
             IF Y=1 THEN ? "podczas zarazy"
             IF Y=2 THEN ? "na tyfus"
@@ -1028,13 +1028,13 @@ endproc
 proc map
     GRAPHICS 7
     SETCOLOR 4,11,5
-    SETCOLOR 2,E-1,2
+    SETCOLOR 2,player-1,2
     CC=3
     exec draw_map
 endproc
 
 proc draw_map
-    LL=int(land(E)/1000)
+    LL=int(land(player)/1000)
     do: 'emulating if elif with do loop exit'
         IF LL<10
             X=100
@@ -1078,7 +1078,7 @@ proc draw_map
     PLOT X,Y
     DRAWTO X,79
 
-    IF troops(E)-5>=land(E)/1000
+    IF troops(player)-5>=land(player)/1000
         REM simple tower
         FOR A=X+1 TO X+6
             FOR B=Y+1 TO Y+9
@@ -1089,7 +1089,7 @@ proc draw_map
             PLOT Z,Y-1
         NEXT Z
     endif
-    IF troops(E)/2>=land(E)/1000
+    IF troops(player)/2>=land(player)/1000
         REM 2-turret tower
         FOR A=X+7 TO X+10
             FOR B=Y+1 TO Y+9
@@ -1110,7 +1110,7 @@ proc draw_map
         PLOT X+10,Y-2
     endif
 
-    Z=cathedral_points(E)
+    Z=cathedral_points(player)
     COLOR CC
     IF Z>15 THEN Z=15
     REM cathedral points
@@ -1240,7 +1240,7 @@ proc draw_map
     endif
 '-------end-of-cathedral-------'
 
-    Z=palace_points(E)
+    Z=palace_points(player)
     IF Z<>0
         REM  PALACE POINTS
         COLOR CC
@@ -1287,9 +1287,9 @@ proc draw_map
         PLOT 102,56
         COLOR CC
     endif
-    Z=serfs(E)-mills(E)*100
+    Z=serfs(player)-mills(player)*100
     IF Z<1 THEN Z=1
-    Z=Z*5/land(E)*10+1
+    Z=Z*5/land(player)*10+1
     IF Z>10 THEN Z=10
     Z=(Z/10)*(77-Y)
     Z=INT(79-Z)
@@ -1307,7 +1307,7 @@ proc draw_map
     NEXT A
     PLOT 144,Z-1
     PLOT 153,Z-1
-    Z=markets(E)*2
+    Z=markets(player)*2
     IF Z>0
         REM draw market stalls
         IF Z>154-X THEN Z=154-X
@@ -1318,7 +1318,7 @@ proc draw_map
             PLOT A+1,62
         NEXT A
     endif
-    Z=mills(E)
+    Z=mills(player)
     IF Z<>0
         REM  draw mills
         IF Z>153-X THEN Z=153-X
@@ -1333,7 +1333,7 @@ proc draw_map
     endif
     COLOR CC
     ?
-    ? "ROK: ";Y1;"   ";
+    ? "ROK: ";year;"   ";
     exec top_of_the_screen
     ?
     exec press_any
@@ -1347,10 +1347,10 @@ proc save_game
     ? #1;names$
     ? #1;players
     ? #1;U
-    ? #1;E
-    ? #1;W
+    ? #1;player
+    ? #1;weather
     ? #1;AX
-    ? #1;Y1
+    ? #1;year
     ? #1;status_points(0)
     FOR A=1 TO players
         ? #1;land(A)
@@ -1378,8 +1378,8 @@ proc save_game
         ? #1;land_prices(A)
     NEXT A
     FOR A=1 TO 30
-        ? #1;N1(A)
-        ? #1;N2(A)
+        ? #1;titles_start_pos(A)
+        ? #1;titles_end_pos(A)
     NEXT A
     CLOSE #1
     POKE @CRSINH,1
@@ -1400,10 +1400,10 @@ proc load_game
     INPUT #1;names$
     INPUT #1;players
     INPUT #1;U
-    INPUT #1;E
-    INPUT #1;W
+    INPUT #1;player
+    INPUT #1;weather
     INPUT #1;AX
-    INPUT #1;Y1
+    INPUT #1;year
     INPUT #1;B
     status_points(0)=B
     FOR A=1 TO players
@@ -1456,9 +1456,9 @@ proc load_game
     NEXT A
     FOR A=1 TO 30
         INPUT #1;B
-        N1(A)=B
+        titles_start_pos(A)=B
         INPUT #1;B
-        N2(A)=B
+        titles_end_pos(A)=B
     NEXT A
     CLOSE #1
     POKE @CRSINH,0
@@ -1477,6 +1477,6 @@ endproc
     DATA SANTA PARAVIA ,FIUMACCIO ,TORRICELLA ,VENIZIA ,MOLINETTO ,FONTANILE
     'the code below gets never executed
     'FOR A=1 TO 30
-    '? titles$(N1(A),N2(A))
+    '? titles$(titles_start_pos(A),titles_end_pos(A))
     'NEXT A
 
