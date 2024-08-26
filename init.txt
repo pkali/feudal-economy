@@ -1,0 +1,87 @@
+'bugs:
+'game over does not show...'
+'+hang after continuing when supreme ruler'
+'+bad return after brakuje ci xxxx korcow'
+'++ IT IS OK! game continues after bankruptcy'
+'pressing 0 in taxes screen hangs game'
+'???return (0) after development continues'
+'+after suicide loop with asking about continuation'
+'+dead(player) is not checked anywhere'
+'+ after suicide "how many units of 76' when bad first letter
+'+loading game does not really work, it starts again'
+
+$options +optimize, optimize=-fixed_vars-const_replace
+'$options mode=compatible
+
+REM modified 061485 by Bruce Ramsey 411 N 61st, Seattle, WA 98103
+REM players=# of players;player=player;year=year
+'   G=$/grain,D1=demand;weather=weather;
+'   L=land price;C1=customs revenue
+REM S1=sales tax rev.;I1=income tax rev.;
+'   J=net justice revenue
+REM markets(player)=# of markets;merchants(player)=# of merchants (5 per market):
+'   mills(player)=# of woollen mills:serfs(player)=# of serfs
+REM palace_points(player)=palace pts:nobles(player)=nobles(RND 1-2/palace_points(player));
+'   cathedral_points(player)=cathedral pts.
+REM clergymen(player)=# of clergymen(RND 1-6 per cath.point;
+'   cash(player)=cash;land(player)=land
+'   troops(player)=troops(paid $3/turn)
+REM customs_duty(player)=customs duty;sales_tax(player)=sales tax
+'   income_tax(player)=income tax;justice(player)=justice
+'   victory_points(player)=victory pts.(15 to win)
+REM death_date(player)=you will die by this date (1440-1455);
+'   grain(player)=grain reserves
+'   dead(player) 0=alive,1=dead;sex(player)=sex
+REM titles$=titles;W$=weather & harvest;
+'   names$=names;justice$=level of justice;
+'   winner(player)are you already sup.ruler?
+REM status_points(player)=status pts.:cathedral pt. adds 1;palace,0.5;mill,0.25;
+'   market,0.1;
+'   land_prices(player)=land prices
+
+'$define POKMSK = 16
+$define LMARGN = 82
+$define RMARGN = 83
+$define ROWCRS = 84
+$define CRSINH = 752
+$define CH     = 764
+$define IRQEN  = 53774
+$define key_y  = 89
+$define key_n  = 78
+$define key_k  = 75
+$define key_m  = 77
+$define key_1  = 49
+$define key_4  = 52
+$define key_ret = 155
+
+    exec splash_screen
+    CLR
+    DELAY=15
+    DIM names$(49),titles$(215),W$(34),land(7),troops(7),cathedral_points(6)
+    dim mills(6),markets(6),palace_points(6),serfs(6),A$(23),cash(6)
+    dim titles_start_pos(30),titles_end_pos(30),land_prices(6)
+    DIM winner(6),customs_duty(6),sex(7),sales_tax(6),income_tax(6)
+    dim justice(6),death_date(6),grain(6),victory_points(7),status_points(6)
+    dim nobles(6),clergymen(6),merchants(6),justice$(12),dead(6)
+    year=1400
+    FOR A=1 TO 30
+        titles_start_pos(A)=LEN(titles$)+1
+        READ A$
+        titles_end_pos(A)=LEN(titles$)+LEN(A$)
+        titles$(LEN(titles$)+1)=A$
+    NEXT A
+    POKE @LMARGN,2
+    get KEY
+    IF KEY=@key_y
+        exec load_game
+    else
+        exec initial_settings
+    endif
+
+
+
+    DATA SIR,BARON,COUNT,MARQUIS,LORD,DUKE,ARCHDUKE,GRAND DUKE,PRINCE,KING,EMPEROR,SHOGUN
+    DATA DEMI-GOD,GOD,SUPREME RULER
+    DATA MADAM,BARONESS,COUNTESS,MARQUISE,LADY,DUCHESS,ARCHDUCHESS,GRAND DUCHESS,PRINCESS
+    DATA QUEEN,EMPRESS,SAINT,DEMI-GODESS,GODESS,SUPREME RULER
+    DATA SANTA PARAVIA ,FIUMACCIO ,TORRICELLA ,VENIZIA ,MOLINETTO ,FONTANILE
